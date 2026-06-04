@@ -6,6 +6,10 @@ app/.env.*
 
 # Documentation & Decisions (Local Memory)
 docs/
+BannerAI-PRD.md
+BannerAI-Workflow.md
+co-agent-context.md
+protokol_deploy.md
 
 # Agent Skills
 .agent-skills/
