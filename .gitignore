@@ -1,0 +1,30 @@
+# Environment Variables
+app/.env
+app/.env.*
+.env
+.env.*
+
+# Documentation & Decisions (Local Memory)
+docs/
+
+# Agent Skills
+.agent-skills/
+
+# Build and Node outputs
+app/node_modules/
+app/dist/
+app/build/
+app/dist-ssr/
+app/*.tsbuildinfo
+app/logs/
+app/*.log
+
+# Archives and binaries
+*.zip
+*.tar.gz
+*.exe
+
+# IDE config
+.vscode/
+.idea/
+.DS_Store
