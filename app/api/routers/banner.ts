@@ -163,4 +163,68 @@ export const bannerRouter = createRouter({
       mockJobs.delete(input.id);
       return { success: true };
     }),
+
+  // Optimize prompt with OpenRouter free models (Gemma 4 -> Poolside Laguna fallback)
+  optimizePrompt: publicQuery
+    .input(z.object({ prompt: z.string() }))
+    .mutation(async ({ input }) => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey || apiKey === "your_openrouter_api_key_here") {
+        throw new Error("OpenRouter API key is not configured in backend .env");
+      }
+
+      const systemMessage = `You are a professional prompt engineer for AI image generators (DALL-E 3, Midjourney, and Stable Diffusion XL).
+Optimize the raw banner prompt to make it highly descriptive, structured, and visually rich.
+Return ONLY the final optimized English prompt without any conversational introduction, markdown code block backticks, or filler.`;
+
+      const models = [
+        "google/gemma-4-31b-it:free",
+        "poolside/laguna-m.1:free"
+      ];
+
+      for (const model of models) {
+        try {
+          console.log(`Attempting prompt optimization with model: ${model}`);
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`,
+              "HTTP-Referer": "https://github.com/Kapakfin93/banner_ai",
+              "X-Title": "JogloGenerator"
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: systemMessage },
+                { role: "user", content: `Please optimize this raw banner prompt:\n\n${input.prompt}` }
+              ]
+            })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.warn(`Optimization failed for ${model}: ${errorText}`);
+            continue;
+          }
+
+          const data: any = await response.json();
+          if (data.error) {
+            console.warn(`Optimization API error for ${model}: ${JSON.stringify(data.error)}`);
+            continue;
+          }
+
+          const content = data.choices?.[0]?.message?.content;
+          if (content?.trim()) {
+            console.log(`Successfully optimized prompt using ${model}`);
+            return { optimizedPrompt: content.trim() };
+          }
+        } catch (err: any) {
+          console.warn(`Connection failure for ${model} during optimization: ${err.message}`);
+        }
+      }
+
+      throw new Error("All whitelisted OpenRouter free models failed to optimize prompt. Please try again.");
+    }),
 });
+

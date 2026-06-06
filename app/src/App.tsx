@@ -17,11 +17,15 @@ import {
   Moon,
 } from "lucide-react";
 import { useState } from "react";
+import { trpc } from "@/providers/trpc";
 
 export default function App() {
   const {
     formData,
     prompt,
+    aiPrompt,
+    setAiPrompt,
+    localPrompt,
     isGenerating,
     generatedImage,
     history,
@@ -42,6 +46,19 @@ export default function App() {
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const optimizeMutation = trpc.banner.optimizePrompt.useMutation();
+
+  const handleOptimize = async () => {
+    try {
+      const result = await optimizeMutation.mutateAsync({ prompt: localPrompt });
+      if (result?.optimizedPrompt) {
+        setAiPrompt(result.optimizedPrompt);
+      }
+    } catch (error) {
+      console.error("Failed to optimize prompt:", error);
     }
   };
 
@@ -178,7 +195,13 @@ export default function App() {
                     )}
                   </Button>
                 </div>
-                <PromptPreview prompt={prompt} onCopy={copyPrompt} />
+                <PromptPreview 
+                  prompt={prompt} 
+                  onCopy={copyPrompt} 
+                  isOptimizing={optimizeMutation.isPending}
+                  onOptimize={handleOptimize}
+                  isAiOptimized={!!aiPrompt}
+                />
               </div>
 
               {/* Generated Result */}

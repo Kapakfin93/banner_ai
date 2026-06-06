@@ -295,7 +295,8 @@ export function generateOptimizedPrompt(data: BannerFormData): string {
 
   // 11. Contact info inclusion
   if (data.includeContact && data.contactInfo.trim()) {
-    parts.push(`. Include contact information area with ${data.contactInfo.split(/\n/).length} contact details`);
+    const formattedContact = data.contactInfo.split("\n").map(line => line.trim()).filter(Boolean).join(", ");
+    parts.push(`. Include contact information area showing these details: ${formattedContact}`);
   }
 
   return parts.join("").replace(/\.\./g, ".").replace(/\s+/g, " ").trim();

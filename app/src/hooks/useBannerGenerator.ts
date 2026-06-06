@@ -46,16 +46,20 @@ function saveHistory(history: GeneratedBanner[]) {
 
 export function useBannerGenerator() {
   const [formData, setFormData] = useState<BannerFormData>(DEFAULT_FORM);
+  const [aiPrompt, setAiPrompt] = useState<string | null>(null);
+
   const contactParts: string[] = [];
   if (formData.contactWhatsapp.trim()) contactParts.push(`WA: ${formData.contactWhatsapp.trim()}`);
   if (formData.contactSocial.trim()) contactParts.push(`IG/Sosmed: ${formData.contactSocial.trim()}`);
   if (formData.contactAddress.trim()) contactParts.push(`Alamat: ${formData.contactAddress.trim()}`);
   const contactInfo = contactParts.join("\n");
 
-  const prompt = generateOptimizedPrompt({
+  const localPrompt = generateOptimizedPrompt({
     ...formData,
     contactInfo,
   });
+
+  const prompt = aiPrompt ?? localPrompt;
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -130,6 +134,7 @@ export function useBannerGenerator() {
     value: BannerFormData[K]
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setAiPrompt(null);
   }, []);
 
   const toggleVisualElement = useCallback((element: string) => {
@@ -140,6 +145,7 @@ export function useBannerGenerator() {
         : [...current, element];
       return { ...prev, visualElements: updated };
     });
+    setAiPrompt(null);
   }, []);
 
   const generateBanner = useCallback(async () => {
@@ -191,6 +197,7 @@ export function useBannerGenerator() {
   const loadFromHistory = useCallback((banner: GeneratedBanner) => {
     setFormData(banner.formData);
     setGeneratedImage(banner.imageUrl);
+    setAiPrompt(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -206,6 +213,9 @@ export function useBannerGenerator() {
   return {
     formData,
     prompt,
+    aiPrompt,
+    setAiPrompt,
+    localPrompt,
     isGenerating,
     generatedImage,
     history,
