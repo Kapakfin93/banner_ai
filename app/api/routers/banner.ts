@@ -187,8 +187,12 @@ Return ONLY the final optimized English prompt without any conversational introd
       ];
 
       for (const model of models) {
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
         try {
           console.log(`Attempting prompt optimization with model: ${model}`);
+          const controller = new AbortController();
+          timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout per model
+
           const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -197,6 +201,7 @@ Return ONLY the final optimized English prompt without any conversational introd
               "HTTP-Referer": "https://github.com/Kapakfin93/banner_ai",
               "X-Title": "JogloGenerator"
             },
+            signal: controller.signal,
             body: JSON.stringify({
               model,
               messages: [
@@ -206,13 +211,18 @@ Return ONLY the final optimized English prompt without any conversational introd
             })
           });
 
+          clearTimeout(timeoutId);
+
           if (!response.ok) {
             const errorText = await response.text();
             console.warn(`Optimization failed for ${model}: ${errorText}`);
             continue;
           }
 
-          const data: any = await response.json();
+          const data = (await response.json()) as {
+            error?: unknown;
+            choices?: Array<{ message?: { content?: string } }>;
+          };
           if (data.error) {
             console.warn(`Optimization API error for ${model}: ${JSON.stringify(data.error)}`);
             continue;
@@ -223,8 +233,9 @@ Return ONLY the final optimized English prompt without any conversational introd
             console.log(`Successfully optimized prompt using ${model}`);
             return { optimizedPrompt: content.trim() };
           }
-        } catch (err: any) {
-          console.warn(`Connection failure for ${model} during optimization: ${err.message}`);
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.warn(`Connection failure for ${model} during optimization: ${errMsg}`);
         }
       }
 

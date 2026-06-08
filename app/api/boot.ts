@@ -10,12 +10,23 @@ const app = new Hono<{ Bindings: HttpBindings }>();
 
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.use("/api/trpc/*", async (c) => {
-  return fetchRequestHandler({
-    endpoint: "/api/trpc",
-    req: c.req.raw,
-    router: appRouter,
-    createContext,
-  });
+  try {
+    return await fetchRequestHandler({
+      endpoint: "/api/trpc",
+      req: c.req.raw,
+      router: appRouter,
+      createContext,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("tRPC Handler Exception caught:", error);
+    return c.json({
+      error: {
+        message: message || "Internal Server Error",
+        code: -32603,
+      }
+    }, 500);
+  }
 });
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
