@@ -49,7 +49,7 @@ export const bannerRouter = createRouter({
     )
     .mutation(async ({ input }) => {
       const jobId = nextJobId++;
-      
+
       const newJob: MockJob = {
         id: jobId,
         brandName: input.brandName,
@@ -88,9 +88,17 @@ export const bannerRouter = createRouter({
           } else {
             // Pemilihan fallback berdasarkan kecocokan keyword
             const lowerCat = input.category.toLowerCase();
-            if (lowerCat.includes("kecantikan") || lowerCat.includes("fashion") || lowerCat.includes("beauty")) {
+            if (
+              lowerCat.includes("kecantikan") ||
+              lowerCat.includes("fashion") ||
+              lowerCat.includes("beauty")
+            ) {
               demoImage = "/generated/demo-kecantikan.jpg";
-            } else if (lowerCat.includes("otomotif") || lowerCat.includes("elektronik") || lowerCat.includes("tech")) {
+            } else if (
+              lowerCat.includes("otomotif") ||
+              lowerCat.includes("elektronik") ||
+              lowerCat.includes("tech")
+            ) {
               demoImage = "/generated/demo-otomotif.jpg";
             }
           }
@@ -102,7 +110,10 @@ export const bannerRouter = createRouter({
             imageUrl: demoImage,
           });
         } catch (error) {
-          console.error(`Gagal menyelesaikan simulasi generate image untuk Job ${jobId}:`, error);
+          console.error(
+            `Gagal menyelesaikan simulasi generate image untuk Job ${jobId}:`,
+            error
+          );
         }
       }, 5000); // Simulasi 5 detik rendering
 
@@ -151,7 +162,7 @@ export const bannerRouter = createRouter({
     const jobs = Array.from(mockJobs.values())
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 50);
-    return jobs.map((job) => ({
+    return jobs.map(job => ({
       ...job,
       visualElements: job.visualElements ? JSON.parse(job.visualElements) : [],
     }));
@@ -173,7 +184,8 @@ export const bannerRouter = createRouter({
       if (!apiKey || apiKey === "your_openrouter_api_key_here") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "OpenRouter API key is not configured in environment variables."
+          message:
+            "OpenRouter API key is not configured in environment variables.",
         });
       }
 
@@ -182,9 +194,8 @@ Optimize the raw banner prompt to make it highly descriptive, structured, and vi
 Return ONLY the final optimized English prompt without any conversational introduction, markdown code block backticks, or filler.`;
 
       const models = [
-        "meta-llama/llama-3-8b-instruct:free",
-        "google/gemma-2-9b-it:free",
-        "mistralai/mistral-7b-instruct:free"
+        "google/gemma-4-31b-it:free",
+        "openai/gpt-oss-120b:free",
       ];
 
       for (const model of models) {
@@ -194,23 +205,29 @@ Return ONLY the final optimized English prompt without any conversational introd
           const controller = new AbortController();
           timeoutId = setTimeout(() => controller.abort(), 3000); // 3 seconds timeout per model
 
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${apiKey}`,
-              "HTTP-Referer": "https://github.com/Kapakfin93/banner_ai",
-              "X-Title": "JogloGenerator"
-            },
-            signal: controller.signal,
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemMessage },
-                { role: "user", content: `Please optimize this raw banner prompt:\n\n${input.prompt}` }
-              ]
-            })
-          });
+          const response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+                "HTTP-Referer": "https://github.com/Kapakfin93/banner_ai",
+                "X-Title": "JogloGenerator",
+              },
+              signal: controller.signal,
+              body: JSON.stringify({
+                model,
+                messages: [
+                  { role: "system", content: systemMessage },
+                  {
+                    role: "user",
+                    content: `Please optimize this raw banner prompt:\n\n${input.prompt}`,
+                  },
+                ],
+              }),
+            }
+          );
 
           clearTimeout(timeoutId);
 
@@ -225,7 +242,9 @@ Return ONLY the final optimized English prompt without any conversational introd
             choices?: Array<{ message?: { content?: string } }>;
           };
           if (data.error) {
-            console.warn(`Optimization API error for ${model}: ${JSON.stringify(data.error)}`);
+            console.warn(
+              `Optimization API error for ${model}: ${JSON.stringify(data.error)}`
+            );
             continue;
           }
 
@@ -236,14 +255,16 @@ Return ONLY the final optimized English prompt without any conversational introd
           }
         } catch (err: unknown) {
           const errMsg = err instanceof Error ? err.message : String(err);
-          console.warn(`Connection failure for ${model} during optimization: ${errMsg}`);
+          console.warn(
+            `Connection failure for ${model} during optimization: ${errMsg}`
+          );
         }
       }
 
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "All whitelisted OpenRouter free models failed to optimize prompt. Please try again later."
+        message:
+          "All whitelisted OpenRouter free models failed to optimize prompt. Please try again later.",
       });
     }),
 });
-
