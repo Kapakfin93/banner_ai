@@ -10,9 +10,23 @@ const app = new Hono<{ Bindings: HttpBindings }>();
 app.get("/api/test-hono", (c) => c.json({ ok: true }));
 app.use("/api/trpc/*", async (c) => {
   try {
+    const method = c.req.method;
+    const headers = new Headers(c.req.raw.headers);
+    let body: string | undefined = undefined;
+
+    if (method === "POST" || method === "PUT" || method === "PATCH") {
+      body = await c.req.text();
+    }
+
+    const newReq = new Request(c.req.raw.url, {
+      method,
+      headers,
+      body,
+    });
+
     return await fetchRequestHandler({
       endpoint: "/api/trpc",
-      req: c.req.raw,
+      req: newReq,
       router: appRouter,
       createContext,
     });
