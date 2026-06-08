@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/providers/trpc";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 export default function App() {
   const {
@@ -46,19 +48,26 @@ export default function App() {
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      toast.success("Prompt berhasil disalin ke clipboard!");
     }
   };
 
   const optimizeMutation = trpc.banner.optimizePrompt.useMutation();
 
   const handleOptimize = async () => {
+    if (!formData.brandName.trim()) {
+      toast.warning("Nama Brand harus diisi terlebih dahulu untuk mengoptimalkan prompt!");
+      return;
+    }
     try {
       const result = await optimizeMutation.mutateAsync({ prompt: localPrompt });
       if (result?.optimizedPrompt) {
         setAiPrompt(result.optimizedPrompt);
+        toast.success("Prompt berhasil dioptimalkan oleh AI!");
       }
     } catch (error) {
       console.error("Failed to optimize prompt:", error);
+      toast.error("Gagal mengoptimalkan prompt.");
     }
   };
 
@@ -278,6 +287,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <Toaster position="top-center" richColors />
     </div>
   );
 }
