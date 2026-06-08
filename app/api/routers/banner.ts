@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware.js";
+import { TRPCError } from "@trpc/server";
 
 interface MockJob {
   id: number;
@@ -170,7 +171,10 @@ export const bannerRouter = createRouter({
     .mutation(async ({ input }) => {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey || apiKey === "your_openrouter_api_key_here") {
-        throw new Error("OpenRouter API key is not configured in backend .env");
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "OpenRouter API key is not configured in environment variables."
+        });
       }
 
       const systemMessage = `You are a professional prompt engineer for AI image generators (DALL-E 3, Midjourney, and Stable Diffusion XL).
@@ -224,7 +228,10 @@ Return ONLY the final optimized English prompt without any conversational introd
         }
       }
 
-      throw new Error("All whitelisted OpenRouter free models failed to optimize prompt. Please try again.");
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "All whitelisted OpenRouter free models failed to optimize prompt. Please try again later."
+      });
     }),
 });
 
