@@ -182,8 +182,9 @@ Optimize the raw banner prompt to make it highly descriptive, structured, and vi
 Return ONLY the final optimized English prompt without any conversational introduction, markdown code block backticks, or filler.`;
 
       const models = [
-        "google/gemma-4-31b-it:free",
-        "poolside/laguna-m.1:free"
+        "meta-llama/llama-3-8b-instruct:free",
+        "google/gemma-2-9b-it:free",
+        "mistralai/mistral-7b-instruct:free"
       ];
 
       for (const model of models) {
@@ -191,7 +192,7 @@ Return ONLY the final optimized English prompt without any conversational introd
         try {
           console.log(`Attempting prompt optimization with model: ${model}`);
           const controller = new AbortController();
-          timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout per model
+          timeoutId = setTimeout(() => controller.abort(), 3000); // 3 seconds timeout per model
 
           const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
